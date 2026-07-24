@@ -10,7 +10,6 @@ const FLEE_RADIUS = 70
  *  wider than FLEE_RADIUS so units don't flicker between states right at
  *  the edge */
 const FLEE_CLEAR_RADIUS = 100
-const FLEE_SPEED = 110
 const RETURN_SPEED = 70
 /** how close to home counts as "arrived" and resumes normal idle/wander */
 const RETURN_EPSILON = 3
@@ -47,6 +46,7 @@ export class CharacterActor {
   private frameIdx = 0
   private dir = Math.random() < 0.5 ? -1 : 1
   private speed = 26 + Math.random() * 14
+  private fleeSpeed = 80 + Math.random() * 190
   /** true while walkIn()'s entrance tween is running — update() just cycles
    *  walk frames in place instead of its usual idle/wander state machine,
    *  since the gsap tween (not this class) owns sprite.x for that stretch */
@@ -122,8 +122,8 @@ export class CharacterActor {
       this.fleeing = true
       this.returning = false
       const dist = Math.sqrt(distSq) || 1
-      const x = clamp(this.sprite.x + (dx / dist) * FLEE_SPEED * dtSec, this.bounds.minX, this.bounds.maxX)
-      const y = clamp(this.sprite.y + (dy / dist) * FLEE_SPEED * dtSec, this.bounds.minY, this.bounds.maxY)
+      const x = clamp(this.sprite.x + (dx / dist) * this.fleeSpeed * dtSec, this.bounds.minX, this.bounds.maxX)
+      const y = clamp(this.sprite.y + (dy / dist) * this.fleeSpeed * dtSec, this.bounds.minY, this.bounds.maxY)
       this.sprite.x = x
       this.sprite.y = y
       this.faceDir(dx < 0 ? -1 : 1)
