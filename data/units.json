@@ -1,0 +1,192 @@
+[
+  {
+    "type": "MONKEY", "cat": "NORMAL", "desc": "Monkey",
+    "writeUp": "- Basic unit that can fight monsters",
+    "hp": 8, "ap": 2, "sp": 3, "unitCapacity": 1,
+    "materialCost": { "MEAT": 5, "FRUIT": 5 },
+    "materialMultiplier": {},
+    "pillageFrequency": 0,
+    "sprite": "unit/monkey/unit monkey.png", "stripWidth": 100, "spriteSmall": "unit/monkey/small monkey.png",
+    "idleClip": "unit/monkey/animation/idle", "walkClip": "unit/monkey/animation/walk"
+  },
+  {
+    "type": "GATHERER", "cat": "NORMAL", "desc": "Gatherer",
+    "writeUp": "",
+    "hp": 8, "ap": 1, "sp": 3, "unitCapacity": 1,
+    "materialCost": { "MEAT": 5, "FRUIT": 5 },
+    "materialMultiplier": { "FRUIT": 1 },
+    "pillageFrequency": 0,
+    "sprite": "unit/monkey/unit gatherer.png", "stripWidth": 100, "spriteSmall": "unit/monkey/small gatherer.png",
+    "idleClip": "unit/monkey/animation/monkey gatherer idle", "walkClip": "unit/monkey/animation/monkey gatherer walk"
+  },
+  {
+    "type": "HUNTER", "cat": "NORMAL", "desc": "Hunter",
+    "writeUp": "- Fights monsters better",
+    "hp": 12, "ap": 3, "sp": 4, "unitCapacity": 1,
+    "materialCost": { "MEAT": 5, "FRUIT": 5 },
+    "materialMultiplier": { "MEAT": 1 },
+    "pillageFrequency": 0,
+    "sprite": "unit/monkey/unit hunter.png", "stripWidth": 100, "spriteSmall": "unit/monkey/small hunter.png",
+    "idleClip": "unit/monkey/animation/monkey hunter idle", "walkClip": "unit/monkey/animation/monkey hunter walk"
+  },
+  {
+    "type": "WOODCUTTER", "cat": "NORMAL", "desc": "Woodcutter",
+    "writeUp": "",
+    "hp": 8, "ap": 1, "sp": 3, "unitCapacity": 2,
+    "materialCost": { "MEAT": 10, "LEATHER": 1, "FRUIT": 10 },
+    "materialMultiplier": { "WOOD": 1 },
+    "pillageFrequency": 0,
+    "sprite": "unit/monkey/unit woodcutter.png", "stripWidth": 100, "spriteSmall": "unit/monkey/small woodcutter.png",
+    "idleClip": "unit/monkey/animation/monkey woodcutter idle", "walkClip": "unit/monkey/animation/monkey woodcutter walk"
+  },
+  {
+    "type": "STONECUTTER", "cat": "NORMAL", "desc": "Stonecutter",
+    "writeUp": "",
+    "hp": 8, "ap": 1, "sp": 3, "unitCapacity": 2,
+    "materialCost": { "MEAT": 10, "LEATHER": 1, "FRUIT": 10 },
+    "materialMultiplier": { "STONE": 1 },
+    "pillageFrequency": 0,
+    "sprite": "unit/monkey/unit stonecutter.png", "stripWidth": 100, "spriteSmall": "unit/monkey/small stonecutter.png",
+    "idleClip": "unit/monkey/animation/monkey stonecutter idle", "walkClip": "unit/monkey/animation/monkey stonecutter walk"
+  },
+  {
+    "type": "ORE_MINER", "cat": "NORMAL", "desc": "Ore Miner",
+    "writeUp": "",
+    "hp": 8, "ap": 1, "sp": 3, "unitCapacity": 2,
+    "materialCost": { "MEAT": 15, "LEATHER": 2, "FRUIT": 15 },
+    "materialMultiplier": { "ORE": 1 },
+    "pillageFrequency": 0,
+    "sprite": "unit/monkey/unit ore miner.png", "stripWidth": 100, "spriteSmall": "unit/monkey/small ore miner.png",
+    "idleClip": "unit/monkey/animation/monkey ore miner idle", "walkClip": "unit/monkey/animation/monkey ore miner walk"
+  },
+  {
+    "type": "TOOL_MAKER", "cat": "NORMAL", "desc": "Tool maker",
+    "writeUp": "",
+    "hp": 8, "ap": 1, "sp": 3, "unitCapacity": 2,
+    "materialCost": { "MEAT": 15, "LEATHER": 2, "FRUIT": 15 },
+    "materialMultiplier": { "TOOL": 1 },
+    "pillageFrequency": 0,
+    "sprite": "unit/monkey/unit tool maker.png", "stripWidth": 100, "spriteSmall": "unit/monkey/small tool maker.png",
+    "idleClip": "unit/monkey/animation/monkey tool maker idle", "walkClip": "unit/monkey/animation/monkey tool maker walk"
+  },
+  {
+    "type": "SPEAR_MONKEY", "cat": "NORMAL", "desc": "Spear Monkey",
+    "writeUp": "- Attack and defend well",
+    "hp": 18, "ap": 5, "sp": 4, "unitCapacity": 2,
+    "materialCost": { "MEAT": 15, "LEATHER": 2, "FRUIT": 15, "WOOD": 3 },
+    "materialMultiplier": {},
+    "pillageFrequency": 0,
+    "sprite": "unit/monkey/unit spear monkey.png", "stripWidth": 100, "spriteSmall": "unit/monkey/small spear monkey.png",
+    "idleClip": "unit/monkey/animation/monkey spearman idle", "walkClip": "unit/monkey/animation/monkey spearman walk"
+  },
+  {
+    "type": "ARCHER", "cat": "NORMAL", "desc": "Archer",
+    "writeUp": "- High damage but weak HP",
+    "hp": 12, "ap": 7, "sp": 6, "unitCapacity": 2,
+    "materialCost": { "MEAT": 15, "LEATHER": 3, "FRUIT": 15, "WOOD": 5 },
+    "materialMultiplier": {},
+    "pillageFrequency": 0,
+    "sprite": "unit/monkey/unit archer.png", "stripWidth": 100, "spriteSmall": "unit/monkey/small archer.png",
+    "idleClip": "unit/monkey/animation/monkey archer idle", "walkClip": "unit/monkey/animation/monkey archer walk"
+  },
+  {
+    "type": "STICK_INSECT", "cat": "ENEMY", "desc": "Stick Insect",
+    "writeUp": "",
+    "hp": 10, "ap": 1, "sp": 3, "unitCapacity": 1,
+    "materialCost": {},
+    "materialMultiplier": { "WOOD": 1 },
+    "pillageFrequency": 6,
+    "sprite": "unit/monster/unit stick insect.png", "stripWidth": 100, "spriteSmall": "unit/monster/small stick insect.png",
+    "idleClip": "unit/monster/animation/monster stick insect idle", "walkClip": "unit/monster/animation/monster stick insect walk"
+  },
+  {
+    "type": "STONE_BEATLE", "cat": "ENEMY", "desc": "Stone Beatle",
+    "writeUp": "",
+    "hp": 10, "ap": 1, "sp": 3, "unitCapacity": 1,
+    "materialCost": {},
+    "materialMultiplier": { "STONE": 1 },
+    "pillageFrequency": 6,
+    "sprite": "unit/monster/unit stone beatle.png", "stripWidth": 100, "spriteSmall": "unit/monster/small stone beatle.png",
+    "idleClip": "unit/monster/animation/monster stone beatle idle", "walkClip": "unit/monster/animation/monster stone beatle walk"
+  },
+  {
+    "type": "WOLF", "cat": "ENEMY", "desc": "Wolf",
+    "writeUp": "",
+    "hp": 15, "ap": 4, "sp": 5, "unitCapacity": 1,
+    "materialCost": {},
+    "materialMultiplier": { "MEAT": 2 },
+    "pillageFrequency": 6,
+    "sprite": "unit/monster/unit wolf.png", "stripWidth": 100, "spriteSmall": "unit/monster/small wolf.png",
+    "idleClip": "unit/monster/animation/monster wolf idle", "walkClip": "unit/monster/animation/monster wolf walk"
+  },
+  {
+    "type": "WILD_BOAR", "cat": "ENEMY", "desc": "Wild Boar",
+    "writeUp": "",
+    "hp": 18, "ap": 7, "sp": 5, "unitCapacity": 1,
+    "materialCost": {},
+    "materialMultiplier": { "FRUIT": 2 },
+    "pillageFrequency": 6,
+    "sprite": "unit/monster/unit wild boar.png", "stripWidth": 100, "spriteSmall": "unit/monster/small wild boar.png",
+    "idleClip": "unit/monster/animation/monster boar idle", "walkClip": "unit/monster/animation/monster boar walk"
+  },
+  {
+    "type": "DEVIL_FROG", "cat": "ENEMY", "desc": "Devil Frog",
+    "writeUp": "",
+    "hp": 15, "ap": 3, "sp": 7, "unitCapacity": 1,
+    "materialCost": {},
+    "materialMultiplier": { "MEAT": 2 },
+    "pillageFrequency": 6,
+    "sprite": "unit/monster/unit devil frog.png", "stripWidth": 100, "spriteSmall": "unit/monster/small devil frog.png",
+    "idleClip": "unit/monster/animation/monster frog idle", "walkClip": "unit/monster/animation/monster frog walk"
+  },
+  {
+    "type": "BEAR", "cat": "ENEMY", "desc": "Bear",
+    "writeUp": "",
+    "hp": 25, "ap": 8, "sp": 6, "unitCapacity": 2,
+    "materialCost": {},
+    "materialMultiplier": { "MEAT": 2 },
+    "pillageFrequency": 6,
+    "sprite": "unit/monster/unit bear.png", "stripWidth": 100, "spriteSmall": "unit/monster/small bear.png",
+    "idleClip": "unit/monster/animation/monster bear idle", "walkClip": "unit/monster/animation/monster bear walk"
+  },
+  {
+    "type": "WOOLLY_RHINO", "cat": "ENEMY", "desc": "Woolly Rhino",
+    "writeUp": "",
+    "hp": 30, "ap": 7, "sp": 7, "unitCapacity": 3,
+    "materialCost": {},
+    "materialMultiplier": { "FRUIT": 5 },
+    "pillageFrequency": 6,
+    "sprite": "unit/monster/unit woolly rhino.png", "stripWidth": 100, "spriteSmall": "unit/monster/small woolly rhino.png",
+    "idleClip": "unit/monster/animation/monster rhino idle", "walkClip": "unit/monster/animation/monster rhino walk"
+  },
+  {
+    "type": "MAMMOTH", "cat": "ENEMY", "desc": "Mammoth",
+    "writeUp": "",
+    "hp": 35, "ap": 10, "sp": 8, "unitCapacity": 3,
+    "materialCost": {},
+    "materialMultiplier": { "FRUIT": 5 },
+    "pillageFrequency": 6,
+    "sprite": "unit/monster/unit mammoth.png", "stripWidth": 100, "spriteSmall": "unit/monster/small mammoth.png",
+    "idleClip": "unit/monster/animation/monster mammoth idle", "walkClip": "unit/monster/animation/monster mammoth walk"
+  },
+  {
+    "type": "WHALE", "cat": "ENEMY", "desc": "Whale",
+    "writeUp": "",
+    "hp": 500, "ap": 30, "sp": 12, "unitCapacity": 2,
+    "materialCost": {},
+    "materialMultiplier": {},
+    "pillageFrequency": 0,
+    "sprite": "unit/monster/unit whale.png", "stripWidth": 226, "spriteSmall": "unit/monster/small whale.png",
+    "idleClip": null, "walkClip": null
+  },
+  {
+    "type": "SHIP", "cat": "NON_CITY", "desc": "Ship",
+    "writeUp": "- For sailing into the unknown",
+    "hp": 100, "ap": 25, "sp": 12, "unitCapacity": 0,
+    "materialCost": { "MEAT": 1500, "LEATHER": 200, "FRUIT": 1500, "WOOD": 1000, "TOOL": 1000 },
+    "materialMultiplier": {},
+    "pillageFrequency": 0,
+    "sprite": "unit/monkey/unit ship.png", "stripWidth": 160, "spriteSmall": "unit/monkey/small ship.png",
+    "idleClip": null, "walkClip": null
+  }
+]

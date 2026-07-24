@@ -1,0 +1,1 @@
+{"root":["./src/main.ts","./src/units.ts","./src/vite-env.d.ts","./src/pixi/characteractor.ts","./src/pixi/wanderfield.ts","./src/pixi/constants.ts","./src/pixi/gsapsetup.ts","./src/app.vue","./data/units.json"],"version":"5.9.3"}
