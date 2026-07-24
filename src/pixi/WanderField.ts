@@ -24,7 +24,7 @@ export class WanderField {
     })
     el.appendChild(this.app.canvas)
 
-    const groundTexture = await Assets.load(spriteUrl('environment/ground_grass.png'))
+    const groundTexture = await Assets.load(spriteUrl('environment/grass.png'))
     groundTexture.source.scaleMode = 'nearest'
     this.ground = new TilingSprite({
       texture: groundTexture,
