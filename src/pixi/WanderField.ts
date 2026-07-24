@@ -14,6 +14,10 @@ export class WanderField {
   private layer = new Container()
   private actors: CharacterActor[] = []
   private ready = false
+  /** last known pointer position in stage coordinates, null while the
+   *  cursor is outside the canvas — actors use this to decide whether to
+   *  flee */
+  private cursor: { x: number; y: number } | null = null
 
   async mount(el: HTMLElement): Promise<void> {
     await this.app.init({
@@ -39,9 +43,19 @@ export class WanderField {
 
     this.layer.sortableChildren = true
     this.app.stage.addChild(this.layer)
+
+    this.app.stage.eventMode = 'static'
+    this.app.stage.hitArea = this.app.screen
+    this.app.stage.on('pointermove', (e) => {
+      this.cursor = { x: e.global.x, y: e.global.y }
+    })
+    this.app.stage.on('pointerleave', () => {
+      this.cursor = null
+    })
+
     this.app.ticker.add((ticker) => {
       const dtSec = ticker.deltaMS / 1000
-      for (const actor of this.actors) actor.update(dtSec)
+      for (const actor of this.actors) actor.update(dtSec, this.cursor)
     })
     this.ready = true
   }
@@ -86,6 +100,7 @@ export class WanderField {
       const homeY = groundTop + Math.random() * (groundBottom - groundTop)
       actor.homeX = homeX
       actor.homeY = homeY
+      actor.bounds = { minX: 20, maxX: w - 20, minY: groundTop, maxY: groundBottom }
       if (i === redIndex) {
         actor.sprite.tint = 0xff2020
         actor.sprite.eventMode = 'static'

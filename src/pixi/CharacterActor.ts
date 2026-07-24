@@ -4,6 +4,16 @@ import { WALK_STRIPS, type UnitType } from '../units'
 import { PX, spriteUrl } from './constants'
 
 const WALK_FPS = 10
+/** distance at which a unit starts fleeing the cursor */
+const FLEE_RADIUS = 70
+/** distance the cursor must clear before a fleeing unit stops running —
+ *  wider than FLEE_RADIUS so units don't flicker between states right at
+ *  the edge */
+const FLEE_CLEAR_RADIUS = 100
+const FLEE_SPEED = 110
+const RETURN_SPEED = 70
+/** how close to home counts as "arrived" and resumes normal idle/wander */
+const RETURN_EPSILON = 3
 
 /** slices a vertical strip of square frames (walk cycles, the pointer
  *  animation) into individual Textures sharing the strip's source */
@@ -41,8 +51,13 @@ export class CharacterActor {
    *  walk frames in place instead of its usual idle/wander state machine,
    *  since the gsap tween (not this class) owns sprite.x for that stretch */
   private entering = false
+  private fleeing = false
+  private returning = false
   homeX = 0
   homeY = 0
+  /** clamp box fleeing is allowed to push the sprite into — set by the
+   *  field alongside homeX/homeY */
+  bounds = { minX: 0, maxX: Infinity, minY: 0, maxY: Infinity }
 
   constructor(private wanderRange: number) {
     this.sprite.anchor.set(0.5, 1)
@@ -74,22 +89,73 @@ export class CharacterActor {
     })
   }
 
-  update(dtSec: number): void {
+  private advanceWalkFrame(dtSec: number): void {
+    if (!this.frames) return
+    this.frameTime += dtSec
+    if (this.frameTime >= 1 / WALK_FPS) {
+      this.frameTime = 0
+      this.frameIdx = (this.frameIdx + 1) % this.frames.length
+      this.sprite.texture = this.frames[this.frameIdx]
+    }
+  }
+
+  private faceDir(dir: number): void {
+    this.dir = dir
+    this.sprite.scale.x = dir < 0 ? -PX : PX
+  }
+
+  update(dtSec: number, cursor: { x: number; y: number } | null): void {
     // keep draw order in sync with depth: units lower on screen (larger y)
     // render on top of units further up
     this.sprite.zIndex = this.sprite.y
 
     if (this.entering) {
-      if (this.frames) {
-        this.frameTime += dtSec
-        if (this.frameTime >= 1 / WALK_FPS) {
-          this.frameTime = 0
-          this.frameIdx = (this.frameIdx + 1) % this.frames.length
-          this.sprite.texture = this.frames[this.frameIdx]
-        }
+      this.advanceWalkFrame(dtSec)
+      return
+    }
+
+    const dx = this.sprite.x - (cursor?.x ?? Infinity)
+    const dy = this.sprite.y - (cursor?.y ?? Infinity)
+    const distSq = dx * dx + dy * dy
+    const scareRadius = this.fleeing ? FLEE_CLEAR_RADIUS : FLEE_RADIUS
+    if (cursor && distSq < scareRadius * scareRadius) {
+      this.fleeing = true
+      this.returning = false
+      const dist = Math.sqrt(distSq) || 1
+      const x = clamp(this.sprite.x + (dx / dist) * FLEE_SPEED * dtSec, this.bounds.minX, this.bounds.maxX)
+      const y = clamp(this.sprite.y + (dy / dist) * FLEE_SPEED * dtSec, this.bounds.minY, this.bounds.maxY)
+      this.sprite.x = x
+      this.sprite.y = y
+      this.faceDir(dx < 0 ? -1 : 1)
+      this.advanceWalkFrame(dtSec)
+      return
+    }
+
+    if (this.fleeing) {
+      this.fleeing = false
+      this.returning = true
+    }
+
+    if (this.returning) {
+      const rdx = this.homeX - this.sprite.x
+      const rdy = this.homeY - this.sprite.y
+      const rdist = Math.sqrt(rdx * rdx + rdy * rdy)
+      if (rdist < RETURN_EPSILON) {
+        this.returning = false
+        this.sprite.position.set(this.homeX, this.homeY)
+        this.state = 'idle'
+        this.stateLeft = 1.5 + Math.random() * 3.5
+        this.sprite.texture = this.idleTexture
+        this.frameIdx = 0
+      } else {
+        this.sprite.x += (rdx / rdist) * RETURN_SPEED * dtSec
+        this.sprite.y += (rdy / rdist) * RETURN_SPEED * dtSec
+        this.faceDir(rdx < 0 ? -1 : 1)
+        this.advanceWalkFrame(dtSec)
       }
       return
     }
+
     this.stateLeft -= dtSec
     if (this.stateLeft <= 0) {
       if (this.state === 'idle' && this.frames) {
@@ -111,13 +177,12 @@ export class CharacterActor {
       } else {
         this.sprite.x = next
       }
-      this.sprite.scale.x = this.dir < 0 ? -PX : PX
-      this.frameTime += dtSec
-      if (this.frameTime >= 1 / WALK_FPS) {
-        this.frameTime = 0
-        this.frameIdx = (this.frameIdx + 1) % this.frames.length
-        this.sprite.texture = this.frames[this.frameIdx]
-      }
+      this.faceDir(this.dir)
+      this.advanceWalkFrame(dtSec)
     }
   }
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max)
 }
