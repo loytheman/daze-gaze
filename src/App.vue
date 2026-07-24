@@ -4,7 +4,7 @@ import './pixi/gsapSetup'
 import { WanderField } from './pixi/WanderField'
 
 const stageEl = ref<HTMLDivElement | null>(null)
-const unitCount = ref(100)
+const unitCount = ref(2000)
 const spawning = ref(false)
 const fps = ref(0)
 const activeCount = ref(0)

@@ -46,9 +46,17 @@ export class CharacterActor {
   private frameIdx = 0
   private dir = Math.random() < 0.5 ? -1 : 1
   private speed = 26 + Math.random() * 14
-  private fleeSpeed = 80 + Math.random() * 190
+  /** 0 = skittish, 1 = unfazed — drives both how long a unit tolerates the
+   *  cursor before bolting and how fast it runs once it does, so the jumpy
+   *  ones sprint off immediately and the brave ones amble away late */
+  private boldness = Math.random()
+  private fleeSpeed = 90 + (1 - this.boldness) * 100 + Math.random() * 20
+  /** how long the cursor must linger within FLEE_RADIUS before this unit
+   *  bolts — near 0 for skittish units, up to ~1.4s for braver ones */
+  private spookDelay = this.boldness * 0.4 + Math.random() * 0.2
+  private scareTimer = 0
   /** true while walkIn()'s entrance tween is running — update() just cycles
-   *  walk frames in place instead of its usual idle/wander state machine,
+   *  walk frames in place instead of its usual idle/w;ander state machine,
    *  since the gsap tween (not this class) owns sprite.x for that stretch */
   private entering = false
   private fleeing = false
@@ -117,10 +125,26 @@ export class CharacterActor {
     const dx = this.sprite.x - (cursor?.x ?? Infinity)
     const dy = this.sprite.y - (cursor?.y ?? Infinity)
     const distSq = dx * dx + dy * dy
-    const scareRadius = this.fleeing ? FLEE_CLEAR_RADIUS : FLEE_RADIUS
-    if (cursor && distSq < scareRadius * scareRadius) {
-      this.fleeing = true
-      this.returning = false
+
+    if (this.fleeing) {
+      // already running: keep going until the cursor clears the wider radius
+      if (!cursor || distSq >= FLEE_CLEAR_RADIUS * FLEE_CLEAR_RADIUS) {
+        this.fleeing = false
+        this.returning = true
+      }
+    } else if (cursor && distSq < FLEE_RADIUS * FLEE_RADIUS) {
+      // cursor is close enough to notice — build up spook before bolting
+      this.scareTimer += dtSec
+      if (this.scareTimer >= this.spookDelay) {
+        this.fleeing = true
+        this.returning = false
+        this.scareTimer = 0
+      }
+    } else {
+      this.scareTimer = 0
+    }
+
+    if (this.fleeing) {
       const dist = Math.sqrt(distSq) || 1
       const x = clamp(this.sprite.x + (dx / dist) * this.fleeSpeed * dtSec, this.bounds.minX, this.bounds.maxX)
       const y = clamp(this.sprite.y + (dy / dist) * this.fleeSpeed * dtSec, this.bounds.minY, this.bounds.maxY)
@@ -129,11 +153,6 @@ export class CharacterActor {
       this.faceDir(dx < 0 ? -1 : 1)
       this.advanceWalkFrame(dtSec)
       return
-    }
-
-    if (this.fleeing) {
-      this.fleeing = false
-      this.returning = true
     }
 
     if (this.returning) {
