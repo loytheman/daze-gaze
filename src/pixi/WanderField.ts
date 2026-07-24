@@ -112,8 +112,8 @@ export class WanderField {
 
       const job = actor.init(type, def.spriteSmall).then(() => {
         const fromY = -60 - Math.random() * 200
-        // actor.walkIn(fromY, 20 + Math.random() * 20)
-        actor.walkIn(fromY, 1)
+        actor.walkIn(fromY, 20 + Math.random() * 20)
+        // actor.walkIn(fromY, 1)
       })
       jobs.push(job)
     }

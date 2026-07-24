@@ -13,6 +13,9 @@ const FLEE_CLEAR_RADIUS = 100
 const RETURN_SPEED = 70
 /** how close to home counts as "arrived" and resumes normal idle/wander */
 const RETURN_EPSILON = 3
+/** chance that, once the cursor clears out, a unit just settles wherever
+ *  it ended up instead of walking back to its original spot */
+const STAY_AWAY_CHANCE = 0.5
 
 /** slices a vertical strip of square frames (walk cycles, the pointer
  *  animation) into individual Textures sharing the strip's source */
@@ -130,7 +133,17 @@ export class CharacterActor {
       // already running: keep going until the cursor clears the wider radius
       if (!cursor || distSq >= FLEE_CLEAR_RADIUS * FLEE_CLEAR_RADIUS) {
         this.fleeing = false
-        this.returning = true
+        if (Math.random() < STAY_AWAY_CHANCE) {
+          // settle right here instead of walking back — this spot is home now
+          this.homeX = this.sprite.x
+          this.homeY = this.sprite.y
+          this.state = 'idle'
+          this.stateLeft = 1.5 + Math.random() * 3.5
+          this.sprite.texture = this.idleTexture
+          this.frameIdx = 0
+        } else {
+          this.returning = true
+        }
       }
     } else if (cursor && distSq < FLEE_RADIUS * FLEE_RADIUS) {
       // cursor is close enough to notice — build up spook before bolting
