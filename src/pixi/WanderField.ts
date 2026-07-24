@@ -1,6 +1,7 @@
-import { Application, Container } from 'pixi.js'
+import { Application, Assets, Container, TilingSprite } from 'pixi.js'
 import { CharacterActor } from './CharacterActor'
 import { UNIT_BY_TYPE, WANDER_TYPES, type UnitType } from '../units'
+import { spriteUrl } from './constants'
 
 /** owns the Pixi Application and the pool of wandering CharacterActors —
  *  kept independent of Vue so it can be driven from a single ref in the
@@ -9,6 +10,7 @@ export class WanderField {
   app = new Application()
   /** fired when the player clicks the one red-tinted unit in the field */
   onFoundRed: (() => void) | null = null
+  private ground!: TilingSprite
   private layer = new Container()
   private actors: CharacterActor[] = []
   private ready = false
@@ -21,6 +23,20 @@ export class WanderField {
       roundPixels: true,
     })
     el.appendChild(this.app.canvas)
+
+    const groundTexture = await Assets.load(spriteUrl('environment/ground_grass.png'))
+    groundTexture.source.scaleMode = 'nearest'
+    this.ground = new TilingSprite({
+      texture: groundTexture,
+      width: this.app.screen.width,
+      height: this.app.screen.height,
+    })
+    this.app.stage.addChild(this.ground)
+    this.app.renderer.on('resize', (w: number, h: number) => {
+      this.ground.width = w
+      this.ground.height = h
+    })
+
     this.layer.sortableChildren = true
     this.app.stage.addChild(this.layer)
     this.app.ticker.add((ticker) => {
