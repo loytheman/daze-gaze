@@ -26,6 +26,14 @@ export interface TilesetJson {
   neighbors: NeighborRule[]
   unique?: boolean
   subsets?: { name: string; tiles: string[] }[]
+  /** "name orientation" pairs to drop even though they have valid
+   *  neighbors — for `unique` tilesets whose per-rotation art was hand-
+   *  drawn inconsistently (e.g. Summer's "cliffcorner 1"/"watercorner 1"
+   *  cover a sliver of their tile instead of the roughly-quadrant
+   *  coverage every other rotation has, so they render as a small
+   *  disconnected fleck floating in grass rather than a joined corner —
+   *  a bad source asset, not a rotation or compat bug) */
+  excludeOrientations?: string[]
 }
 
 export interface RealOrientedTile {
@@ -82,9 +90,16 @@ function mirrorRule(rule: NeighborRule, symmetryOf: Map<string, string>, cardina
  *  all four sides satisfied), so keeping it around only risks wasted
  *  contradictions. Rotation + reflection expansion covers all four
  *  directions for every tile in the bundled tilesets; this is a safety
- *  net in case a future/edited tileset doesn't. */
-function dropDeadOrientations(tiles: RealOrientedTile[], compat: number[][][]): { tiles: RealOrientedTile[]; compat: number[][][] } {
-  const alive = tiles.map((_, i) => compat[i].every((dir) => dir.length > 0))
+ *  net in case a future/edited tileset doesn't. Also drops any tile
+ *  explicitly named in `excluded` (see TilesetJson.excludeOrientations)
+ *  even though it has valid neighbors, for hand-drawn oriented art that's
+ *  simply wrong rather than incompatible. */
+function dropDeadOrientations(
+  tiles: RealOrientedTile[],
+  compat: number[][][],
+  excluded: Set<string>,
+): { tiles: RealOrientedTile[]; compat: number[][][] } {
+  const alive = tiles.map((t, i) => compat[i].every((dir) => dir.length > 0) && !excluded.has(`${t.name}|${t.orientation}`))
   if (alive.every(Boolean)) return { tiles, compat }
 
   const remap = new Array<number>(tiles.length).fill(-1)
@@ -158,5 +173,9 @@ export function buildRealOrientedTiles(json: TilesetJson): { tiles: RealOriented
     }
   }
 
-  return dropDeadOrientations(tiles, compat)
+  const excluded = new Set((json.excludeOrientations ?? []).map((ref) => {
+    const { name, orientation } = parseRef(ref)
+    return `${name}|${orientation}`
+  }))
+  return dropDeadOrientations(tiles, compat, excluded)
 }

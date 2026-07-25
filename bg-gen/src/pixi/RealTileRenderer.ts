@@ -61,7 +61,11 @@ export async function buildRealTileTextures(
     const sprite = new Sprite(base)
     sprite.anchor.set(0.5)
     sprite.position.set(base.width / 2, base.height / 2)
-    sprite.rotation = (t.orientation * Math.PI) / 2
+    // counter-clockwise: verified against the actual tile art (comparing
+    // rendered edge pixels for pairs the neighbor rules call compatible)
+    // to line up better with mxgmn's original, undocumented rotation
+    // convention than the clockwise direction we used before
+    sprite.rotation = -(t.orientation * Math.PI) / 2
     const holder = new Container()
     holder.addChild(sprite)
 

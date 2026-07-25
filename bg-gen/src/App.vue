@@ -2,7 +2,6 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { BackgroundGrid, type GridOptions, type GridSource } from './pixi/BackgroundGrid'
 
-const PROCEDURAL = '__procedural__'
 const TILED = 'tiled'
 const TILED2 = 'tiled2'
 const OVERLAPPING = 'overlapping'
@@ -11,6 +10,7 @@ const HYBRID = 'hybrid'
 const stageEl = ref<HTMLDivElement | null>(null)
 const tileSize = ref(32)
 const wrap = ref(true)
+const scanline = ref(false)
 const stepsPerFrame = ref(8)
 const loading = ref(false)
 const errorMsg = ref<string | null>(null)
@@ -18,8 +18,38 @@ const errorMsg = ref<string | null>(null)
 const technique = ref(TILED)
 
 // tiled-model options
-const sourceName = ref(PROCEDURAL)
 const tilesetNames = BackgroundGrid.availableTilesets()
+const sourceName = ref(tilesetNames[0] ?? '')
+
+// Summer's tile graph has several small self-reinforcing cycles (pure
+// grass/water/cliff bands, or a watercorner/roadturn diagonal chain) that
+// a wrapped grid can satisfy far more easily than genuine 2D variety, so
+// it reliably collapses into one of them with wrap on — confirmed by
+// repeated test generations, both with default weights and with several
+// re-weightings that only changed which repeating motif won. Defaulting
+// wrap off when Summer is selected sidesteps it; the checkbox still lets
+// the user turn wrap back on if they want to see it anyway.
+// Castle's upstream mxgmn sample (github.com/mxgmn/WaveFunctionCollapse)
+// is configured with heuristic="Scanline" and no periodic/wrap attribute
+// at all — collapsing cells in strict raster order without the pressure
+// to also stay periodic across the wrap seam produces the dense, organic
+// maze the reference screenshot shows. Scanline *with* wrap still solves
+// fine, but (same class of issue as Summer's wrap problem) tends to lock
+// into one small perfectly-repeating checkerboard instead. Defaulting
+// both to match upstream; the checkboxes still let either be turned back on.
+function applyTilesetDefaults(name: string) {
+  if (name === 'Summer') wrap.value = false
+  if (name === 'Castle') {
+    scanline.value = true
+    wrap.value = false
+  }
+}
+applyTilesetDefaults(sourceName.value)
+
+function onTilesetChange() {
+  applyTilesetDefaults(sourceName.value)
+  regenerate()
+}
 
 // overlapping-model options
 const overlappingImageNames = BackgroundGrid.availableOverlappingImages()
@@ -58,14 +88,22 @@ function currentSource(): GridSource {
       options: { rotations: hybridRotations.value, edgeDepth: 1, tolerance: 16 },
     }
   }
-  return sourceName.value === PROCEDURAL ? { kind: 'procedural' } : { kind: 'tileset', name: sourceName.value }
+  return { kind: 'tileset', name: sourceName.value }
 }
 
 function currentOptions(): GridOptions {
   const el = stageEl.value
   const cols = Math.max(1, Math.ceil((el?.clientWidth ?? 800) / tileSize.value))
   const rows = Math.max(1, Math.ceil((el?.clientHeight ?? 600) / tileSize.value))
-  return { cols, rows, tileSize: tileSize.value, wrap: wrap.value, stepsPerFrame: stepsPerFrame.value, source: currentSource() }
+  return {
+    cols,
+    rows,
+    tileSize: tileSize.value,
+    wrap: wrap.value,
+    stepsPerFrame: stepsPerFrame.value,
+    source: currentSource(),
+    heuristic: scanline.value ? 'scanline' : 'entropy',
+  }
 }
 
 async function regenerate() {
@@ -128,9 +166,8 @@ onBeforeUnmount(() => {
         <select
           v-model="sourceName"
           class="w-36 rounded border border-neutral-600 bg-neutral-800 px-2 py-1 text-neutral-100"
-          @change="regenerate"
+          @change="onTilesetChange"
         >
-          <option :value="PROCEDURAL">Procedural (grass & paths)</option>
           <option v-for="name in tilesetNames" :key="name" :value="name">{{ name }}</option>
         </select>
       </label>
@@ -218,6 +255,11 @@ onBeforeUnmount(() => {
       <label class="flex items-center gap-2 pb-1">
         <input v-model="wrap" type="checkbox" class="h-3.5 w-3.5" />
         Seamless wrap
+      </label>
+
+      <label class="flex items-center gap-2 pb-1">
+        <input v-model="scanline" type="checkbox" class="h-3.5 w-3.5" />
+        Scanline order
       </label>
 
       <button

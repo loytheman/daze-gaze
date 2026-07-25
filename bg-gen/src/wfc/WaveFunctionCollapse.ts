@@ -7,11 +7,22 @@ interface Cell {
   count: number
 }
 
+/** which cell to collapse next: 'entropy' (default) picks whichever cell
+ *  has the fewest remaining options, filling in the most-constrained
+ *  areas first; 'scanline' always picks the next undetermined cell in
+ *  raster order, matching mxgmn's own Scanline heuristic — some of the
+ *  original tilesets (e.g. Castle) were authored and demoed specifically
+ *  with Scanline, and produce a denser, more maze-like result with it
+ *  than entropy-order ever does, since a raster sweep can't "save" easy
+ *  open-field cells for later the way entropy order does. */
+export type Heuristic = 'entropy' | 'scanline'
+
 export interface WFCOptions {
   width: number
   height: number
   /** tile edges wrap around the grid, so the output tiles seamlessly */
   wrap: boolean
+  heuristic?: Heuristic
   rng?: () => number
 }
 
@@ -33,6 +44,7 @@ export class WaveFunctionCollapse {
   readonly width: number
   readonly height: number
   private wrap: boolean
+  private heuristic: Heuristic
   private rng: () => number
   private cells: Cell[] = []
   private queue: number[] = []
@@ -46,6 +58,7 @@ export class WaveFunctionCollapse {
     this.width = opts.width
     this.height = opts.height
     this.wrap = opts.wrap
+    this.heuristic = opts.heuristic ?? 'entropy'
     this.rng = opts.rng ?? Math.random
     this.reset()
   }
@@ -79,10 +92,11 @@ export class WaveFunctionCollapse {
     return out
   }
 
-  /** collapses the lowest-entropy cell and propagates the constraint.
-   *  returns false on contradiction — caller should reset() and retry */
+  /** collapses the next cell (by whichever heuristic was configured) and
+   *  propagates the constraint. returns false on contradiction — caller
+   *  should reset() and retry */
   step(): boolean {
-    const idx = this.pickLowestEntropyCell()
+    const idx = this.heuristic === 'scanline' ? this.pickScanlineCell() : this.pickLowestEntropyCell()
     if (idx === -1) return true
     if (!this.collapse(idx)) return false
     return this.propagate()
@@ -98,6 +112,14 @@ export class WaveFunctionCollapse {
       return null
     }
     return ny * this.width + nx
+  }
+
+  /** first undetermined cell in raster order — mxgmn's Scanline heuristic */
+  private pickScanlineCell(): number {
+    for (let i = 0; i < this.cells.length; i++) {
+      if (this.cells[i].count > 1) return i
+    }
+    return -1
   }
 
   /** Shannon entropy over remaining tile weights, plus a tiny random

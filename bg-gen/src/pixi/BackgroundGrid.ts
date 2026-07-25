@@ -1,10 +1,10 @@
 import { Application, Container, Sprite, Texture } from 'pixi.js'
-import { buildOrientedTiles, buildCompatibility } from '../wfc/tileset'
 import { buildRealOrientedTiles } from '../wfc/realTileset'
-import { WaveFunctionCollapse } from '../wfc/WaveFunctionCollapse'
-import { buildTileTextures } from './TileRenderer'
+import { WaveFunctionCollapse, type Heuristic } from '../wfc/WaveFunctionCollapse'
 import { buildRealTileTextures } from './RealTileRenderer'
-import { TILESETS } from '../wfc/tilesetRegistry'
+import { TILESETS, isEdgeSpecTileset } from '../wfc/tilesetRegistry'
+import { buildEdgeSpecOrientedTiles } from '../wfc/edgeSpecTileset'
+import { buildEdgeSpecTileTextures } from './EdgeSpecTileRenderer'
 import { OVERLAPPING_IMAGES } from '../wfc/overlappingRegistry'
 import { loadImagePixels } from '../wfc/loadImagePixels'
 import { extractPatterns, buildOverlappingCompat, type OverlappingOptions } from '../wfc/overlappingModel'
@@ -16,7 +16,6 @@ import { TILED_MODEL_2_SETS } from '../wfc/tiledModel2Assets'
 import { buildTiledModel2Textures } from './TiledModel2Renderer'
 
 export type GridSource =
-  | { kind: 'procedural' }
   | { kind: 'tileset'; name: string }
   | { kind: 'overlapping'; imageName: string; options: OverlappingOptions }
   | { kind: 'hybrid'; setName: string; options: HybridOptions }
@@ -40,6 +39,11 @@ export interface GridOptions {
    *  the step-by-step reveal */
   stepsPerFrame: number
   source: GridSource
+  /** 'entropy' (default) fills the most-constrained cells first;
+   *  'scanline' collapses strictly in raster order, matching mxgmn's own
+   *  heuristic for tilesets like Castle that were authored/demoed with it —
+   *  see WaveFunctionCollapse.ts's Heuristic doc comment */
+  heuristic?: Heuristic
 }
 
 const PLACEHOLDER_TINT = 0x2c3b28
@@ -47,9 +51,7 @@ const MAX_ATTEMPTS = 50
 
 /** owns the Pixi Application and animates a WaveFunctionCollapse solve:
  *  every frame it advances the solver a few cells and paints whichever
- *  cells just resolved, so the grid visibly fills in over time. Tiles
- *  come either from the built-in procedural grass/path set or from a
- *  loaded mxgmn-style JSON tileset + its PNG art. */
+ *  cells just resolved, so the grid visibly fills in over time. */
 export class BackgroundGrid {
   app = new Application()
   /** surfaced when a tileset fails to load, e.g. a bad image path */
@@ -114,6 +116,7 @@ export class BackgroundGrid {
       width: opts.cols,
       height: opts.rows,
       wrap: opts.wrap,
+      heuristic: opts.heuristic,
     })
     this.textures = built.textures
     this.tints = built.tints
@@ -137,23 +140,16 @@ export class BackgroundGrid {
   private async buildSource(opts: GridOptions): Promise<BuiltSource> {
     const source = opts.source
 
-    if (source.kind === 'procedural') {
-      const tiles = buildOrientedTiles()
-      return {
-        weights: tiles.map((t) => t.weight),
-        compat: buildCompatibility(tiles),
-        textures: buildTileTextures(
-          this.app.renderer,
-          tiles.map((t) => t.edges),
-          opts.tileSize,
-        ),
-        tints: null,
-      }
-    }
-
     if (source.kind === 'tileset') {
       const entry = TILESETS.find((t) => t.name === source.name)
       if (!entry) throw new Error(`unknown tileset: ${source.name}`)
+
+      if (isEdgeSpecTileset(entry.json)) {
+        const { tiles, compat } = buildEdgeSpecOrientedTiles(entry.json)
+        const textures = await buildEdgeSpecTileTextures(entry.name, tiles)
+        return { weights: tiles.map((t) => t.weight), compat, textures, tints: null }
+      }
+
       const { tiles, compat } = buildRealOrientedTiles(entry.json)
       const textures = await buildRealTileTextures(this.app.renderer, entry.name, entry.json.unique ?? false, tiles)
       return { weights: tiles.map((t) => t.weight), compat, textures, tints: null }
