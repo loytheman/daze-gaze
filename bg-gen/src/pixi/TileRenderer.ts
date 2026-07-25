@@ -42,19 +42,24 @@ function drawTile(g: Graphics, edges: Edges, size: number): void {
   g.rect(half - w / 2, half - w / 2, w, w).stroke({ width: 1, color: PATH_EDGE, alpha: 0.5 })
 }
 
-/** bakes one texture per unique edge signature — every cell sharing a
- *  pattern reuses the same texture, keyed by e.g. "PGPG" */
-export function buildTileTextures(renderer: Renderer, tiles: Edges[], size: number): Map<string, Texture> {
-  const textures = new Map<string, Texture>()
-  for (const edges of tiles) {
+/** bakes one texture per oriented tile (deduped by edge signature, since
+ *  several oriented tiles can share the same pattern), returned in the
+ *  same order as `tiles` so index i is that tile's texture */
+export function buildTileTextures(renderer: Renderer, tiles: Edges[], size: number): Texture[] {
+  const bySignature = new Map<string, Texture>()
+  return tiles.map((edges) => {
     const key = edges.join('')
-    if (textures.has(key)) continue
+    const cached = bySignature.get(key)
+    if (cached) return cached
     const g = new Graphics()
     drawTile(g, edges, size)
     const texture = renderer.generateTexture(g)
+    // scaleMode alone won't refresh an already-uploaded GPU sampler;
+    // style.update() forces it (see RealTileRenderer.ts's setNearest)
     texture.source.scaleMode = 'nearest'
-    textures.set(key, texture)
+    texture.source.style.update()
+    bySignature.set(key, texture)
     g.destroy()
-  }
-  return textures
+    return texture
+  })
 }

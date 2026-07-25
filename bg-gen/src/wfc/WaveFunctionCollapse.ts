@@ -1,9 +1,6 @@
-import type { OrientedTile } from './types'
-
 // N, E, S, W
 const DX = [0, 1, 0, -1]
 const DY = [-1, 0, 1, 0]
-const OPPOSITE = [2, 3, 0, 1]
 
 interface Cell {
   possible: boolean[]
@@ -18,19 +15,6 @@ export interface WFCOptions {
   rng?: () => number
 }
 
-/** for each tile and direction, which other tiles are allowed to sit
- *  there — precomputed once so propagation is just array lookups */
-function buildCompatibility(tiles: OrientedTile[]): number[][][] {
-  return tiles.map((tile) =>
-    [0, 1, 2, 3].map((d) =>
-      tiles.reduce<number[]>((acc, other, j) => {
-        if (other.edges[OPPOSITE[d]] === tile.edges[d]) acc.push(j)
-        return acc
-      }, []),
-    ),
-  )
-}
-
 /**
  * TypeScript reimplementation of the "simple tiled model" from
  * https://github.com/mxgmn/WaveFunctionCollapse — repeatedly collapses the
@@ -38,28 +22,36 @@ function buildCompatibility(tiles: OrientedTile[]): number[][][] {
  * constraints to its neighbors (arc consistency), until every cell holds
  * exactly one tile or a cell runs out of options (a contradiction, which
  * the caller resolves by calling reset() and trying again).
+ *
+ * Deliberately knows nothing about what a "tile" actually looks like —
+ * callers hand in tile weights and a precomputed [tile][direction] ->
+ * allowed-neighbor-tiles table, built however suits their tile
+ * representation (see tileset.ts and realTileset.ts for two different
+ * ones).
  */
 export class WaveFunctionCollapse {
   readonly width: number
   readonly height: number
   private wrap: boolean
   private rng: () => number
-  private compat: number[][][]
   private cells: Cell[] = []
   private queue: number[] = []
   private resolved: number[] = []
 
-  constructor(private tiles: OrientedTile[], opts: WFCOptions) {
+  constructor(
+    private weights: number[],
+    private compat: number[][][],
+    opts: WFCOptions,
+  ) {
     this.width = opts.width
     this.height = opts.height
     this.wrap = opts.wrap
     this.rng = opts.rng ?? Math.random
-    this.compat = buildCompatibility(tiles)
     this.reset()
   }
 
   reset(): void {
-    const n = this.tiles.length
+    const n = this.weights.length
     this.cells = Array.from({ length: this.width * this.height }, () => ({
       possible: new Array(n).fill(true),
       count: n,
@@ -72,10 +64,11 @@ export class WaveFunctionCollapse {
     return this.cells.every((c) => c.count === 1)
   }
 
-  tileAt(x: number, y: number): OrientedTile | null {
+  /** the resolved tile index at (x, y), or null while still undecided */
+  tileAt(x: number, y: number): number | null {
     const cell = this.cells[y * this.width + x]
     if (cell.count !== 1) return null
-    return this.tiles[cell.possible.indexOf(true)]
+    return cell.possible.indexOf(true)
   }
 
   /** indices resolved to a single tile since the last call — either from
@@ -117,9 +110,9 @@ export class WaveFunctionCollapse {
       if (cell.count <= 1) continue
       let sumW = 0
       let sumWLogW = 0
-      for (let t = 0; t < this.tiles.length; t++) {
+      for (let t = 0; t < this.weights.length; t++) {
         if (!cell.possible[t]) continue
-        const w = this.tiles[t].weight
+        const w = this.weights[t]
         sumW += w
         sumWLogW += w * Math.log(w)
       }
@@ -135,14 +128,14 @@ export class WaveFunctionCollapse {
   private collapse(idx: number): boolean {
     const cell = this.cells[idx]
     let sumW = 0
-    for (let t = 0; t < this.tiles.length; t++) if (cell.possible[t]) sumW += this.tiles[t].weight
+    for (let t = 0; t < this.weights.length; t++) if (cell.possible[t]) sumW += this.weights[t]
     if (sumW <= 0) return false
 
     let r = this.rng() * sumW
     let chosen = -1
-    for (let t = 0; t < this.tiles.length; t++) {
+    for (let t = 0; t < this.weights.length; t++) {
       if (!cell.possible[t]) continue
-      r -= this.tiles[t].weight
+      r -= this.weights[t]
       if (r <= 0) {
         chosen = t
         break
@@ -150,7 +143,7 @@ export class WaveFunctionCollapse {
     }
     if (chosen === -1) chosen = cell.possible.lastIndexOf(true)
 
-    for (let t = 0; t < this.tiles.length; t++) cell.possible[t] = t === chosen
+    for (let t = 0; t < this.weights.length; t++) cell.possible[t] = t === chosen
     cell.count = 1
     this.queue.push(idx)
     this.resolved.push(idx)
@@ -169,14 +162,14 @@ export class WaveFunctionCollapse {
         if (nIdx === null) continue
         const neighbor = this.cells[nIdx]
 
-        const allowed = new Array(this.tiles.length).fill(false)
-        for (let t = 0; t < this.tiles.length; t++) {
+        const allowed = new Array(this.weights.length).fill(false)
+        for (let t = 0; t < this.weights.length; t++) {
           if (!cell.possible[t]) continue
           for (const u of this.compat[t][d]) allowed[u] = true
         }
 
         let changed = false
-        for (let u = 0; u < this.tiles.length; u++) {
+        for (let u = 0; u < this.weights.length; u++) {
           if (neighbor.possible[u] && !allowed[u]) {
             neighbor.possible[u] = false
             neighbor.count--

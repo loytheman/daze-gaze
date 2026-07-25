@@ -32,3 +32,19 @@ export function buildOrientedTiles(): OrientedTile[] {
   }
   return [...bySignature.values()]
 }
+
+// N, E, S, W — opposite of each side, for matching an edge against its neighbor
+const OPPOSITE = [2, 3, 0, 1]
+
+/** two tiles are compatible neighbors in direction d when the touching
+ *  edges carry the same label */
+export function buildCompatibility(tiles: OrientedTile[]): number[][][] {
+  return tiles.map((tile) =>
+    [0, 1, 2, 3].map((d) =>
+      tiles.reduce<number[]>((acc, other, j) => {
+        if (other.edges[OPPOSITE[d]] === tile.edges[d]) acc.push(j)
+        return acc
+      }, []),
+    ),
+  )
+}
