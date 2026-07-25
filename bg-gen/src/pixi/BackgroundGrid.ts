@@ -11,12 +11,16 @@ import { extractPatterns, buildOverlappingCompat, type OverlappingOptions } from
 import { HYBRID_SETS, loadHybridSetImages } from '../wfc/hybridRegistry'
 import { buildHybridOrientedTiles, type HybridOptions } from '../wfc/hybridEdges'
 import { buildHybridTileTextures } from './HybridTileRenderer'
+import { buildTiledModel2Tiles } from '../wfc/tiledModel2'
+import { TILED_MODEL_2_SETS } from '../wfc/tiledModel2Assets'
+import { buildTiledModel2Textures } from './TiledModel2Renderer'
 
 export type GridSource =
   | { kind: 'procedural' }
   | { kind: 'tileset'; name: string }
   | { kind: 'overlapping'; imageName: string; options: OverlappingOptions }
   | { kind: 'hybrid'; setName: string; options: HybridOptions }
+  | { kind: 'tiled2'; setName: string }
 
 interface BuiltSource {
   weights: number[]
@@ -76,6 +80,10 @@ export class BackgroundGrid {
 
   static availableHybridSets(): string[] {
     return HYBRID_SETS.map((s) => s.name)
+  }
+
+  static availableTiledModel2Sets(): string[] {
+    return TILED_MODEL_2_SETS
   }
 
   async mount(el: HTMLElement): Promise<void> {
@@ -166,11 +174,18 @@ export class BackgroundGrid {
       }
     }
 
-    const entry = HYBRID_SETS.find((s) => s.name === source.setName)
-    if (!entry) throw new Error(`unknown hybrid tile set: ${source.setName}`)
-    const images = await loadHybridSetImages(entry)
-    const { tiles, compat } = buildHybridOrientedTiles(images, source.options)
-    return { weights: tiles.map((t) => t.weight), compat, textures: buildHybridTileTextures(tiles), tints: null }
+    if (source.kind === 'hybrid') {
+      const entry = HYBRID_SETS.find((s) => s.name === source.setName)
+      if (!entry) throw new Error(`unknown hybrid tile set: ${source.setName}`)
+      const images = await loadHybridSetImages(entry)
+      const { tiles, compat } = buildHybridOrientedTiles(images, source.options)
+      return { weights: tiles.map((t) => t.weight), compat, textures: buildHybridTileTextures(tiles), tints: null }
+    }
+
+    if (!TILED_MODEL_2_SETS.includes(source.setName)) throw new Error(`unknown tiled-2 set: ${source.setName}`)
+    const { tiles, compat } = buildTiledModel2Tiles()
+    const textures = await buildTiledModel2Textures(tiles, source.setName)
+    return { weights: tiles.map(() => 1), compat, textures, tints: null }
   }
 
   private tick = (): void => {

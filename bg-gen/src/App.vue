@@ -4,6 +4,7 @@ import { BackgroundGrid, type GridOptions, type GridSource } from './pixi/Backgr
 
 const PROCEDURAL = '__procedural__'
 const TILED = 'tiled'
+const TILED2 = 'tiled2'
 const OVERLAPPING = 'overlapping'
 const HYBRID = 'hybrid'
 
@@ -32,10 +33,17 @@ const hybridSetNames = BackgroundGrid.availableHybridSets()
 const hybridSet = ref(hybridSetNames[0] ?? '')
 const hybridRotations = ref(true)
 
+// tiled-model-2 options
+const tiled2SetNames = BackgroundGrid.availableTiledModel2Sets()
+const tiled2Set = ref(tiled2SetNames[0] ?? '')
+
 let grid: BackgroundGrid | null = null
 let resizeTimer: ReturnType<typeof setTimeout> | null = null
 
 function currentSource(): GridSource {
+  if (technique.value === TILED2) {
+    return { kind: 'tiled2', setName: tiled2Set.value }
+  }
   if (technique.value === OVERLAPPING) {
     return {
       kind: 'overlapping',
@@ -109,6 +117,7 @@ onBeforeUnmount(() => {
           @change="regenerate"
         >
           <option :value="TILED">Tiled</option>
+          <option :value="TILED2">Tiled 2 (Coding Train)</option>
           <option :value="HYBRID">Hybrid (auto edges)</option>
           <option :value="OVERLAPPING">Overlapping</option>
         </select>
@@ -123,6 +132,17 @@ onBeforeUnmount(() => {
         >
           <option :value="PROCEDURAL">Procedural (grass & paths)</option>
           <option v-for="name in tilesetNames" :key="name" :value="name">{{ name }}</option>
+        </select>
+      </label>
+
+      <label v-if="technique === TILED2" class="flex flex-col gap-1">
+        Tile set
+        <select
+          v-model="tiled2Set"
+          class="w-36 rounded border border-neutral-600 bg-neutral-800 px-2 py-1 text-neutral-100"
+          @change="regenerate"
+        >
+          <option v-for="name in tiled2SetNames" :key="name" :value="name">{{ name }}</option>
         </select>
       </label>
 
