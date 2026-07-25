@@ -1,0 +1,6 @@
+https://blog.ptidej.net/procedural-generation-using-wave-function-collapse/
+https://ijdykeman.github.io/ml/2017/10/12/wang-tile-procedural-generation.html
+https://www.sandromaglione.com/articles/pixel-art-game-tileset-made-easier
+
+https://github.com/mxgmn/WaveFunctionCollapse
+https://github.com/DylearnDev/Dylearn-3D-Pixel-Art-Grass-Demo
