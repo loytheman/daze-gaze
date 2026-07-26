@@ -6,6 +6,10 @@ export type Direction = 'N' | 'E' | 'S' | 'W'
 export interface RoadTileDef {
   file: string
   mask: number
+  weight: number
+  /** caps how many times this tile may appear in the whole grid; null/
+   *  omitted means unlimited */
+  count?: number | null
   connections: Direction[]
 }
 

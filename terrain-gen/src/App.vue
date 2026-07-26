@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
-import { Application, Sprite } from 'pixi.js'
+import { Application, Graphics, Sprite } from 'pixi.js'
 import { loadRoadTiles, ROAD_TILE_SIZE } from './roadTileset'
 import { buildRoadCompat } from './wfc/roadCompat'
 import { WaveFunctionCollapse } from './wfc/WaveFunctionCollapse'
@@ -20,11 +20,12 @@ onMounted(async () => {
 
   const tiles = await loadRoadTiles()
   const compat = buildRoadCompat(tiles)
-  const weights = tiles.map(() => 1)
+  const weights = tiles.map((t) => t.weight)
+  const counts = tiles.map((t) => t.count ?? undefined)
 
   const cols = STAGE_WIDTH / ROAD_TILE_SIZE
   const rows = STAGE_HEIGHT / ROAD_TILE_SIZE
-  const wfc = new WaveFunctionCollapse(weights, compat, { width: cols, height: rows, wrap: false })
+  const wfc = new WaveFunctionCollapse(weights, compat, { width: cols, height: rows, wrap: false, counts })
   if (!wfc.run()) throw new Error('WFC failed to find a solution')
 
   for (let y = 0; y < rows; y++) {
@@ -36,6 +37,16 @@ onMounted(async () => {
       app.stage.addChild(sprite)
     }
   }
+
+  // debug overlay: outline every 32x32 cell so tile boundaries are visible
+  const borders = new Graphics()
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      borders.rect(x * ROAD_TILE_SIZE, y * ROAD_TILE_SIZE, ROAD_TILE_SIZE, ROAD_TILE_SIZE)
+    }
+  }
+  borders.stroke({ width: 1, color: 0x000000, alpha: 0.3 })
+  app.stage.addChild(borders)
 })
 
 onBeforeUnmount(() => {

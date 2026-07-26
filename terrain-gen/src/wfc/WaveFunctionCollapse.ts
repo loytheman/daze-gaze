@@ -13,6 +13,10 @@ export interface WFCOptions {
   /** tile edges wrap around the grid, so the output tiles seamlessly */
   wrap: boolean
   rng?: () => number
+  /** caps how many times each tile may be placed in the whole grid —
+   *  unlike weight (relative likelihood per pick), this is an exact
+   *  supply. undefined/missing entries are unlimited. */
+  counts?: (number | undefined)[]
 }
 
 /**
@@ -33,11 +37,15 @@ export class WaveFunctionCollapse {
   private rng: () => number
   private cells: Cell[] = []
   private queue: number[] = []
+  /** remaining supply per tile this attempt — reset() re-derives it from
+   *  opts.counts each time, since supply consumed by a failed attempt
+   *  shouldn't carry over into the retry */
+  private remaining: number[] = []
 
   constructor(
     private weights: number[],
     private compat: number[][][],
-    opts: WFCOptions,
+    private opts: WFCOptions,
   ) {
     this.width = opts.width
     this.height = opts.height
@@ -53,6 +61,9 @@ export class WaveFunctionCollapse {
       count: n,
     }))
     this.queue = []
+    this.remaining = Array.from({ length: n }, (_, t) => this.opts.counts?.[t] ?? Infinity)
+    // a tile whose count starts at 0 should never be placed at all
+    for (let t = 0; t < n; t++) if (this.remaining[t] <= 0) this.exhaustTile(t)
   }
 
   get done(): boolean {
@@ -99,7 +110,15 @@ export class WaveFunctionCollapse {
   }
 
   /** Shannon entropy over remaining tile weights, plus a tiny random
-   *  nudge so ties don't all resolve in scan order */
+   *  nudge so ties don't all resolve in scan order. A weight of 0 means
+   *  "never pick this tile" and must be excluded from the sum outright —
+   *  Math.log(0) is -Infinity, and 0 * -Infinity is NaN, which would
+   *  silently poison every cell's entropy (since NaN < anything is
+   *  false, no cell would ever be picked, and the solver would report
+   *  success having resolved nothing). If every remaining option for a
+   *  cell is weight <=0 there's no valid tile left for it at all — surface
+   *  that immediately as the lowest possible entropy so collapse() gets a
+   *  chance to report the contradiction, instead of leaving it undetected. */
   private pickLowestEntropyCell(): number {
     let best = -1
     let bestEntropy = Infinity
@@ -111,10 +130,11 @@ export class WaveFunctionCollapse {
       for (let t = 0; t < this.weights.length; t++) {
         if (!cell.possible[t]) continue
         const w = this.weights[t]
+        if (w <= 0) continue
         sumW += w
         sumWLogW += w * Math.log(w)
       }
-      const entropy = Math.log(sumW) - sumWLogW / sumW + this.rng() * 1e-6
+      const entropy = sumW > 0 ? Math.log(sumW) - sumWLogW / sumW + this.rng() * 1e-6 : -Infinity
       if (entropy < bestEntropy) {
         bestEntropy = entropy
         best = i
@@ -139,11 +159,55 @@ export class WaveFunctionCollapse {
         break
       }
     }
-    if (chosen === -1) chosen = cell.possible.lastIndexOf(true)
+    // floating-point edge case: r can fail to cross to <=0 by the last
+    // possible tile if that tile has weight 0 (subtracting 0 never moves
+    // r) — fall back to the last possible tile that actually has weight,
+    // never a weight-0 one
+    if (chosen === -1) {
+      for (let t = this.weights.length - 1; t >= 0; t--) {
+        if (cell.possible[t] && this.weights[t] > 0) {
+          chosen = t
+          break
+        }
+      }
+    }
 
     for (let t = 0; t < this.weights.length; t++) cell.possible[t] = t === chosen
     cell.count = 1
     this.queue.push(idx)
+    return this.onResolved(idx)
+  }
+
+  /** a cell can land on exactly one tile two ways: an explicit weighted
+   *  pick in collapse(), or as a side effect of propagate() eliminating
+   *  every other option. Both must count against that tile's supply the
+   *  same way, or a capped tile can slip past its count entirely via the
+   *  propagation path — charge the supply here, in the one place both
+   *  paths funnel through. */
+  private onResolved(idx: number): boolean {
+    const tile = this.cells[idx].possible.indexOf(true)
+    if (!Number.isFinite(this.remaining[tile])) return true
+    this.remaining[tile]--
+    if (this.remaining[tile] <= 0) return this.exhaustTile(tile)
+    return true
+  }
+
+  /** forcibly removes a tile from every still-undecided cell's options
+   *  because its supply has run out (a hard cap, unlike weight, which
+   *  only ever affects likelihood) — returns false if that leaves any
+   *  cell with zero options left (a contradiction). Removing it can
+   *  itself resolve another cell down to one tile, so that cascades
+   *  through onResolved() too. */
+  private exhaustTile(t: number): boolean {
+    for (let i = 0; i < this.cells.length; i++) {
+      const cell = this.cells[i]
+      if (cell.count <= 1 || !cell.possible[t]) continue
+      cell.possible[t] = false
+      cell.count--
+      if (cell.count === 0) return false
+      this.queue.push(i)
+      if (cell.count === 1 && !this.onResolved(i)) return false
+    }
     return true
   }
 
@@ -174,7 +238,10 @@ export class WaveFunctionCollapse {
           }
         }
         if (neighbor.count === 0) return false
-        if (changed) this.queue.push(nIdx)
+        if (changed) {
+          this.queue.push(nIdx)
+          if (neighbor.count === 1 && !this.onResolved(nIdx)) return false
+        }
       }
     }
     return true
