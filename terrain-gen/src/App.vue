@@ -5,8 +5,6 @@ import { loadRoadTiles, ROAD_TILE_SIZE } from './roadTileset'
 
 const STAGE_WIDTH = 1024
 const STAGE_HEIGHT = 768
-const GRID_COLS = 4
-const DISPLAY_SCALE = 3
 
 const stageEl = ref<HTMLDivElement | null>(null)
 let app: Application | null = null
@@ -19,20 +17,17 @@ onMounted(async () => {
   stageEl.value.appendChild(app.canvas)
 
   const tiles = await loadRoadTiles()
-  const cellSize = ROAD_TILE_SIZE * DISPLAY_SCALE
-  const rows = Math.ceil(tiles.length / GRID_COLS)
-  const gridWidth = GRID_COLS * cellSize
-  const gridHeight = rows * cellSize
-  const originX = (STAGE_WIDTH - gridWidth) / 2
-  const originY = (STAGE_HEIGHT - gridHeight) / 2
+  const cols = STAGE_WIDTH / ROAD_TILE_SIZE
+  const rows = STAGE_HEIGHT / ROAD_TILE_SIZE
 
-  tiles.forEach((tile, i) => {
-    const sprite = new Sprite(tile.texture)
-    sprite.width = cellSize
-    sprite.height = cellSize
-    sprite.position.set(originX + (i % GRID_COLS) * cellSize, originY + Math.floor(i / GRID_COLS) * cellSize)
-    app!.stage.addChild(sprite)
-  })
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const tile = tiles[Math.floor(Math.random() * tiles.length)]
+      const sprite = new Sprite(tile.texture)
+      sprite.position.set(x * ROAD_TILE_SIZE, y * ROAD_TILE_SIZE)
+      app.stage.addChild(sprite)
+    }
+  }
 })
 
 onBeforeUnmount(() => {
