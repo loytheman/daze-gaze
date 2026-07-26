@@ -1,0 +1,21 @@
+{
+  "tileSize": 32,
+  "tiles": [
+    { "file": "0.png", "mask": 0, "connections": [] },
+    { "file": "1.png", "mask": 1, "connections": ["N"] },
+    { "file": "2.png", "mask": 2, "connections": ["E"] },
+    { "file": "3.png", "mask": 3, "connections": ["N", "E"] },
+    { "file": "4.png", "mask": 4, "connections": ["S"] },
+    { "file": "5.png", "mask": 5, "connections": ["N", "S"] },
+    { "file": "6.png", "mask": 6, "connections": ["E", "S"] },
+    { "file": "7.png", "mask": 7, "connections": ["N", "E", "S"] },
+    { "file": "8.png", "mask": 8, "connections": ["W"] },
+    { "file": "9.png", "mask": 9, "connections": ["N", "W"] },
+    { "file": "10.png", "mask": 10, "connections": ["E", "W"] },
+    { "file": "11.png", "mask": 11, "connections": ["N", "E", "W"] },
+    { "file": "12.png", "mask": 12, "connections": ["S", "W"] },
+    { "file": "13.png", "mask": 13, "connections": ["N", "S", "W"] },
+    { "file": "14.png", "mask": 14, "connections": ["E", "S", "W"] },
+    { "file": "15.png", "mask": 15, "connections": ["N", "E", "S", "W"] }
+  ]
+}
