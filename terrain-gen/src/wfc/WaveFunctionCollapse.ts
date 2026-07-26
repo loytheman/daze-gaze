@@ -62,8 +62,16 @@ export class WaveFunctionCollapse {
     }))
     this.queue = []
     this.remaining = Array.from({ length: n }, (_, t) => this.opts.counts?.[t] ?? Infinity)
-    // a tile whose count starts at 0 should never be placed at all
-    for (let t = 0; t < n; t++) if (this.remaining[t] <= 0) this.exhaustTile(t)
+    // A tile with count 0, or weight <=0, must never be placed at all —
+    // not just deprioritized. Without this, weight only ever affects the
+    // explicit weighted pick in collapse(); propagate() eliminates purely
+    // by edge-compatibility with no idea what "weight" even means, so if
+    // a cell's neighbors leave a weight-0 tile as the *only* remaining
+    // compatible option (e.g. it's the sole tile with connections on all
+    // 4 sides), propagation forces it in anyway. Exhausting both cases
+    // up front removes them from every cell before any picks happen, so
+    // there's never a "last option" for propagation to fall back on.
+    for (let t = 0; t < n; t++) if (this.remaining[t] <= 0 || this.weights[t] <= 0) this.exhaustTile(t)
   }
 
   get done(): boolean {

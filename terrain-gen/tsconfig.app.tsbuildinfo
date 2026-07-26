@@ -1,1 +1,1 @@
-{"root":["./src/main.ts","./src/roadtileset.ts","./src/vite-env.d.ts","./src/wfc/wavefunctioncollapse.ts","./src/wfc/roadcompat.ts","./src/app.vue"],"version":"5.9.3"}
+{"root":["./src/main.ts","./src/tileset.ts","./src/vite-env.d.ts","./src/wfc/wavefunctioncollapse.ts","./src/wfc/bitmaskcompat.ts","./src/app.vue"],"version":"5.9.3"}
