@@ -7,7 +7,7 @@ import { WaveFunctionCollapse } from './wfc/WaveFunctionCollapse'
 
 const STAGE_WIDTH = 1024
 const STAGE_HEIGHT = 768
-const TILESET_NAME = 'grass'
+const TILESET_NAME = 'grass4'
 
 const stageEl = ref<HTMLDivElement | null>(null)
 let app: Application | null = null
@@ -19,8 +19,8 @@ onMounted(async () => {
   await app.init({ width: STAGE_WIDTH, height: STAGE_HEIGHT, backgroundColor: 0x2b2f36 })
   stageEl.value.appendChild(app.canvas)
 
-  const { tileSize, tiles } = await loadTileset(TILESET_NAME)
-  const compat = buildBitmaskCompat(tiles)
+  const { tileSize, type, tiles } = await loadTileset(TILESET_NAME)
+  const compat = buildBitmaskCompat(tiles, type)
   const weights = tiles.map((t) => t.weight)
   const counts = tiles.map((t) => t.count ?? undefined)
 

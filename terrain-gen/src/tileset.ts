@@ -1,9 +1,14 @@
 import { Assets, Texture } from 'pixi.js'
 
+/** which scheme `TileDef.mask` bits are read with — see bitmaskCompat.ts:
+ *  "edge" tiles connect along a whole side (N=1, E=2, S=4, W=8); "corner"
+ *  tiles (blob/marching-squares style) connect at each of the 4 corners
+ *  independently (NE=1, SE=2, SW=4, NW=8) */
+export type TilesetType = 'edge' | 'corner'
+
 export interface TileDef {
   file: string
-  /** bitmask of which sides this tile connects on: N=1, E=2, S=4, W=8 —
-   *  e.g. a tile connecting north and east is 1|2=3 */
+  /** bitmask whose meaning depends on the tileset's `type` — see TilesetType */
   mask: number
   weight: number
   /** caps how many times this tile may appear in the whole grid; null/
@@ -13,6 +18,7 @@ export interface TileDef {
 
 export interface TilesetJson {
   tileSize: number
+  type: TilesetType
   tiles: TileDef[]
 }
 
@@ -22,6 +28,7 @@ export interface Tile extends TileDef {
 
 export interface Tileset {
   tileSize: number
+  type: TilesetType
   tiles: Tile[]
 }
 
@@ -63,5 +70,5 @@ export async function loadTileset(name: string): Promise<Tileset> {
       texture: await Assets.load(urlFor(name, def.file)),
     })),
   )
-  return { tileSize: json.tileSize, tiles }
+  return { tileSize: json.tileSize, type: json.type, tiles }
 }
