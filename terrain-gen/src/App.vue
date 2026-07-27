@@ -7,7 +7,7 @@ import { WaveFunctionCollapse } from './wfc/WaveFunctionCollapse'
 
 const STAGE_WIDTH = 1024
 const STAGE_HEIGHT = 768
-const TILESET_NAME = 'grass4'
+const TILESET_NAME = 'grass'
 
 const stageEl = ref<HTMLDivElement | null>(null)
 let app: Application | null = null
